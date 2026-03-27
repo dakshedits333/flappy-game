@@ -54,7 +54,7 @@
                 }
             }
             // Main Image
-            ctx.drawImage(birdImg, x, y, size, size);
+            ctx.drawImage(birdImg, x, y, 150, 150);
             ctx.restore();
         }
 
@@ -146,7 +146,7 @@
                 ctx.textAlign = "center";
                 ctx.fillText(score, canvas.width / 2, 70);
 
-            } else if (gameState === 'GAMEOVER') {
+            } else if (gameState === 'GAMEOVER - You are such a Noob') {
                 ctx.fillStyle = "rgba(0,0,0,0.7)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "white"; ctx.textAlign = "center";
