@@ -4,46 +4,18 @@
     <meta charset="UTF-8">
     <title>Kalyan the Bird</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #70c5ce; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; overflow: hidden; background: #70c5ce; font-family: 'Arial', sans-serif; }
         canvas { display: block; margin: 0 auto; background: #70c5ce; }
-
-        /* Grand Intro Overlay */
         #overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            background: rgba(0, 0, 0, 0.7);
-            color: white; text-align: center;
-            z-index: 10;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(0, 0, 0, 0.75); color: white; text-align: center; z-index: 10;
         }
-
-        h1 { 
-            font-size: 70px; margin: 0; text-shadow: 5px 5px #000; 
-            animation: pulse 1.5s infinite; 
-            color: #f1c40f;
-        }
-
-        p { font-size: 28px; margin: 10px 0; font-style: italic; color: #ecf0f1; text-shadow: 2px 2px #000; }
-        
-        .start-hint { 
-            margin-top: 50px; font-size: 20px; font-weight: bold;
-            animation: blink 1.2s infinite;
-            letter-spacing: 2px;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes blink {
-            0% { opacity: 0; }
-            50% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
+        h1 { font-size: 60px; margin: 0; color: #f1c40f; text-shadow: 4px 4px #000; animation: pulse 1.5s infinite; }
+        p { font-size: 24px; margin: 10px 0; font-style: italic; color: #bdc3c7; }
+        .hint { margin-top: 40px; font-size: 20px; animation: blink 1s infinite; font-weight: bold; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes blink { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -52,7 +24,7 @@
 <div id="overlay">
     <h1>Kalyan the Bird</h1>
     <p>Game by Daksh</p>
-    <div class="start-hint">PRESS SPACE OR CLICK TO BEGIN</div>
+    <div class="hint">CLICK OR PRESS SPACE TO START</div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -65,42 +37,38 @@ const overlay = document.getElementById("overlay");
 canvas.width = 450;
 canvas.height = 650;
 
-// --- Game Settings ---
-let gravity = 0.14;       // Slightly floatier for the bigger image
-let jumpStrength = -4.5;
-let pipeGap = 260;        // Made wider because the photo is bigger now!
-let pipeSpeed = 2.2;
+// --- ASSETS ---
+const friendImg = new Image();
+friendImg.src = 'ma friend.png'; // Looking for your specific file
+
+const deathSound = new Audio('death.mp3'); // Looking for your specific file
+
+// --- SETTINGS ---
+let gravity = 0.18;
+let jumpStrength = -5;
+let pipeGap = 270; // Big gap for Kalyan
+let pipeSpeed = 2.5;
 let gameState = "MENU";
 let score = 0;
 let frameCount = 0;
 
-// --- Assets ---
-const friendImg = new Image();
-friendImg.src = 'friend.png'; 
-
-const cloudImg = new Image();
-cloudImg.src = 'cloud.png';
-
-const flapSound = new Audio('jump.mp3'); 
-const scoreSound = new Audio('score.mp3');
-
-// --- Large Character Dimensions ---
-const bird = { 
-    x: 60, 
-    y: 300, 
-    w: 80, // Increased width for clarity
-    h: 80, // Increased height for clarity
-    velocity: 0 
-};
-
+const bird = { x: 70, y: 300, w: 90, h: 90, velocity: 0 };
 let pipes = [];
-let clouds = [
-    { x: 30, y: 80, s: 0.3 }, 
-    { x: 280, y: 150, s: 0.5 },
-    { x: 100, y: 400, s: 0.2 }
-];
 
-function startGame() {
+// Helper to draw a cloud without an image file
+function drawCloud(x, y) {
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(x, y, 30, 0, Math.PI * 2);
+    ctx.arc(x + 25, y - 10, 25, 0, Math.PI * 2);
+    ctx.arc(x + 25, y + 10, 25, 0, Math.PI * 2);
+    ctx.arc(x + 50, y, 30, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+let cloudPos = [{x: 50, y: 100}, {x: 300, y: 180}, {x: 150, y: 400}];
+
+function resetGame() {
     bird.y = 300;
     bird.velocity = 0;
     pipes = [];
@@ -111,100 +79,81 @@ function startGame() {
 }
 
 function die() {
+    deathSound.play();
     gameState = "MENU";
     overlay.classList.remove("hidden");
 }
 
 function draw() {
-    // 1. Sky
+    // 1. Background
     ctx.fillStyle = "#70c5ce";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 2. Moving Clouds
-    clouds.forEach(c => {
-        ctx.globalAlpha = 0.8;
-        ctx.drawImage(cloudImg, c.x, c.y, 120, 70);
-        ctx.globalAlpha = 1.0;
-        c.x -= c.s;
-        if (c.x < -130) c.x = canvas.width + 50;
+    // 2. Built-in Clouds (No image file needed!)
+    cloudPos.forEach(c => {
+        drawCloud(c.x, c.y);
+        c.x -= 0.5;
+        if (c.x < -100) c.x = canvas.width + 50;
     });
 
     if (gameState === "PLAYING") {
-        // 3. Physics
         bird.velocity += gravity;
         bird.y += bird.velocity;
 
-        // 4. Pipes Logic
-        if (frameCount % 90 === 0) {
-            let minPipeHeight = 50;
-            let holePos = Math.random() * (canvas.height - pipeGap - (minPipeHeight * 2)) + minPipeHeight;
+        if (frameCount % 85 === 0) {
+            let holePos = Math.random() * (canvas.height - pipeGap - 200) + 100;
             pipes.push({ x: canvas.width, top: holePos, passed: false });
         }
 
         pipes.forEach((p, index) => {
             p.x -= pipeSpeed;
-            
-            // Pipe Design
             ctx.fillStyle = "#2ecc71";
             ctx.strokeStyle = "#1b5e20";
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3;
             
-            // Draw Top/Bottom Pipes
-            ctx.fillRect(p.x, 0, 60, p.top);
-            ctx.strokeRect(p.x, 0, 60, p.top);
-            ctx.fillRect(p.x, p.top + pipeGap, 60, canvas.height);
-            ctx.strokeRect(p.x, p.top + pipeGap, 60, canvas.height);
+            // Draw pipes
+            ctx.fillRect(p.x, 0, 70, p.top);
+            ctx.strokeRect(p.x, 0, 70, p.top);
+            ctx.fillRect(p.x, p.top + pipeGap, 70, canvas.height);
+            ctx.strokeRect(p.x, p.top + pipeGap, 70, canvas.height);
 
-            // Scoring (Hitbox adjustment for bigger image)
-            if (!p.passed && bird.x > p.x + 60) {
+            if (!p.passed && bird.x > p.x + 70) {
                 score++;
                 p.passed = true;
-                scoreSound.play();
             }
 
-            // Collision Detection (Tighter hitbox for the photo)
-            let padding = 10; // Gives a little "mercy" buffer around the photo
-            if (bird.x + padding < p.x + 60 && bird.x + bird.w - padding > p.x &&
-               (bird.y + padding < p.top || bird.y + bird.h - padding > p.top + pipeGap)) {
+            // Simple collision
+            if (bird.x + 10 < p.x + 70 && bird.x + bird.w - 10 > p.x &&
+               (bird.y + 10 < p.top || bird.y + bird.h - 10 > p.top + pipeGap)) {
                 die();
             }
-
-            if (p.x + 60 < 0) pipes.splice(index, 1);
+            if (p.x + 70 < 0) pipes.splice(index, 1);
         });
 
-        // 5. Bounds Check
         if (bird.y + bird.h > canvas.height || bird.y < 0) die();
 
-        // 6. Draw Big Friend Photo
-        // We use imageSmoothingEnabled to keep the cutout crisp
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(friendImg, bird.x, bird.y, bird.w, bird.h);
+        // 3. Draw Friend Photo
+        try {
+            ctx.drawImage(friendImg, bird.x, bird.y, bird.w, bird.h);
+        } catch (e) {
+            // Fallback if image fails
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
+        }
 
-        // 7. UI Score
         ctx.fillStyle = "white";
         ctx.font = "bold 40px Arial";
         ctx.textAlign = "center";
         ctx.fillText(score, canvas.width/2, 60);
-
         frameCount++;
     }
 
     requestAnimationFrame(draw);
 }
 
-// Controls
-const handleInput = () => {
-    if (gameState === "MENU") {
-        startGame();
-    } else {
-        bird.velocity = jumpStrength;
-        flapSound.currentTime = 0; // Restart sound if clicked fast
-        flapSound.play();
-    }
-};
-
-window.addEventListener("keydown", (e) => { if(e.code === "Space") handleInput(); });
-canvas.addEventListener("mousedown", handleInput);
+const input = () => { if (gameState === "MENU") resetGame(); else bird.velocity = jumpStrength; };
+window.addEventListener("keydown", (e) => { if(e.code === "Space") input(); });
+canvas.addEventListener("mousedown", input);
 
 draw();
 </script>
