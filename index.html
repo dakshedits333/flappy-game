@@ -2,18 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Kalyan the Bird - Beta</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kalyan the Bird</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #70c5ce; font-family: 'Arial', sans-serif; }
-        canvas { display: block; margin: 0 auto; background: #70c5ce; border: 5px solid #2c3e50; }
+        body { margin: 0; overflow: hidden; background: #70c5ce; font-family: 'Arial', sans-serif; touch-action: manipulation; }
+        canvas { display: block; margin: 0 auto; background: #70c5ce; max-width: 100%; height: auto; }
+        
         #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background: rgba(0, 0, 0, 0.85); color: white; text-align: center; z-index: 10;
+            background: rgba(0, 0, 0, 0.8); color: white; text-align: center; z-index: 10;
         }
-        h1 { font-size: 80px; margin: 0; color: #f1c40f; text-shadow: 6px 6px #000; animation: pulse 1.5s infinite; }
-        p { font-size: 35px; margin: 10px 0; font-style: italic; color: #ecf0f1; }
-        .hint { margin-top: 50px; font-size: 24px; animation: blink 1s infinite; font-weight: bold; color: #fff; }
+        
+        h1 { font-size: 50px; margin: 0; color: #f1c40f; text-shadow: 4px 4px #000; animation: pulse 1.5s infinite; }
+        p { font-size: 24px; margin: 10px 0; font-style: italic; color: #bdc3c7; }
+        .hint { margin-top: 30px; font-size: 18px; animation: blink 1s infinite; font-weight: bold; }
+        
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         @keyframes blink { 0% { opacity: 0.1; } 50% { opacity: 1; } 100% { opacity: 0.1; } }
         .hidden { display: none !important; }
@@ -24,7 +28,7 @@
 <div id="overlay">
     <h1>Kalyan the Bird</h1>
     <p>Game by Daksh</p>
-    <div class="hint">CLICK TO START THE LEGEND</div>
+    <div class="hint">TAP SCREEN TO START</div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -34,8 +38,8 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const overlay = document.getElementById("overlay");
 
-// Large Canvas for a Large Legend
-canvas.width = 650; 
+// Balanced size for mobile and desktop
+canvas.width = 500; 
 canvas.height = 800;
 
 // --- ASSETS ---
@@ -46,36 +50,36 @@ const deathSound = new Audio('death.mp3');
 
 // --- SETTINGS ---
 let gravity = 0.15;       
-let jumpStrength = -6;    // Slightly stronger jump to move the big guy
+let jumpStrength = -6;    
 let pipeGap = 320;        
-let pipeSpeed = 2.8;
+let pipeSpeed = 3;
 let gameState = "MENU";
 let score = 0;
 let frameCount = 0;
 
-// DRASTIC SIZE INCREASE
+// MEGA SIZE BIRD
 const bird = { 
-    x: 120, 
+    x: 80, 
     y: 300, 
-    w: 220, // MASSIVE WIDTH
-    h: 220, // MASSIVE HEIGHT
+    w: 220, 
+    h: 220, 
     velocity: 0 
 };
 
 let pipes = [];
 
-// Built-in Clouds
+// Built-in Clouds (No file needed)
 function drawCloud(x, y) {
     ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
     ctx.beginPath();
-    ctx.arc(x, y, 50, 0, Math.PI * 2);
-    ctx.arc(x + 40, y - 20, 45, 0, Math.PI * 2);
-    ctx.arc(x + 40, y + 20, 45, 0, Math.PI * 2);
-    ctx.arc(x + 85, y, 50, 0, Math.PI * 2);
+    ctx.arc(x, y, 40, 0, Math.PI * 2);
+    ctx.arc(x + 30, y - 15, 35, 0, Math.PI * 2);
+    ctx.arc(x + 30, y + 15, 35, 0, Math.PI * 2);
+    ctx.arc(x + 60, y, 40, 0, Math.PI * 2);
     ctx.fill();
 }
 
-let cloudPos = [{x: 50, y: 120}, {x: 450, y: 200}, {x: 250, y: 550}];
+let cloudPos = [{x: 50, y: 100}, {x: 350, y: 180}, {x: 200, y: 550}];
 
 function resetGame() {
     bird.y = 250;
@@ -85,6 +89,11 @@ function resetGame() {
     frameCount = 0;
     gameState = "PLAYING";
     overlay.classList.add("hidden");
+    
+    // Unlock audio for mobile
+    deathSound.play();
+    deathSound.pause();
+    deathSound.currentTime = 0;
 }
 
 function die() {
@@ -94,24 +103,21 @@ function die() {
 }
 
 function draw() {
-    // Background
     ctx.fillStyle = "#70c5ce";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Clouds
     cloudPos.forEach(c => {
         drawCloud(c.x, c.y);
         c.x -= 0.8;
-        if (c.x < -200) c.x = canvas.width + 100;
+        if (c.x < -150) c.x = canvas.width + 100;
     });
 
     if (gameState === "PLAYING") {
         bird.velocity += gravity;
         bird.y += bird.velocity;
 
-        // Pipe Spawning
-        if (frameCount % 100 === 0) {
-            let holePos = Math.random() * (canvas.height - pipeGap - 250) + 125;
+        if (frameCount % 90 === 0) {
+            let holePos = Math.random() * (canvas.height - pipeGap - 200) + 100;
             pipes.push({ x: canvas.width, top: holePos, passed: false });
         }
 
@@ -121,61 +127,64 @@ function draw() {
             ctx.strokeStyle = "#1b5e20";
             ctx.lineWidth = 6;
             
-            // Draw pipes
-            ctx.fillRect(p.x, 0, 90, p.top);
-            ctx.strokeRect(p.x, 0, 90, p.top);
-            ctx.fillRect(p.x, p.top + pipeGap, 90, canvas.height);
-            ctx.strokeRect(p.x, p.top + pipeGap, 90, canvas.height);
+            ctx.fillRect(p.x, 0, 80, p.top);
+            ctx.strokeRect(p.x, 0, 80, p.top);
+            ctx.fillRect(p.x, p.top + pipeGap, 80, canvas.height);
+            ctx.strokeRect(p.x, p.top + pipeGap, 80, canvas.height);
 
-            if (!p.passed && bird.x > p.x + 90) {
+            if (!p.passed && bird.x + (bird.w/2) > p.x + 80) {
                 score++;
                 p.passed = true;
             }
 
-            // COLLISION: Tighter hitbox for the giant photo
-            // We give 50px of "mercy" on the sides so it feels fair
-            let mercyX = 50; 
-            let mercyY = 40;
-            if (bird.x + mercyX < p.x + 90 && bird.x + bird.w - mercyX > p.x &&
-               (bird.y + mercyY < p.top || bird.y + bird.h - mercyY > p.top + pipeGap)) {
+            // Tighter collision for giant photo
+            let mx = 60; // Side mercy
+            let my = 50; // Top/Bottom mercy
+            if (bird.x + mx < p.x + 80 && bird.x + bird.w - mx > p.x &&
+               (bird.y + my < p.top || bird.y + bird.h - my > p.top + pipeGap)) {
                 die();
             }
-            if (p.x + 90 < 0) pipes.splice(index, 1);
+            if (p.x + 80 < 0) pipes.splice(index, 1);
         });
 
-        // Floor/Ceiling
-        if (bird.y + bird.h - 30 > canvas.height || bird.y + 30 < 0) die();
+        if (bird.y + bird.h - 40 > canvas.height || bird.y + 40 < 0) die();
 
-        // Draw the Giant Photo
+        // Draw Bird
         if (friendImg.complete && friendImg.naturalWidth !== 0) {
             ctx.drawImage(friendImg, bird.x, bird.y, bird.w, bird.h);
         } else {
             ctx.fillStyle = "#f1c40f"; 
             ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
-            ctx.fillStyle = "black";
-            ctx.font = "20px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("PHOTO NOT FOUND", bird.x + bird.w/2, bird.y + bird.h/2);
         }
 
-        // Score
         ctx.fillStyle = "white";
         ctx.font = "bold 60px Arial";
         ctx.textAlign = "center";
-        ctx.shadowColor = "rgba(0,0,0,0.5)";
-        ctx.shadowBlur = 10;
         ctx.fillText(score, canvas.width/2, 80);
-        ctx.shadowBlur = 0;
 
         frameCount++;
     }
-
     requestAnimationFrame(draw);
 }
 
-const input = () => { if (gameState === "MENU") resetGame(); else bird.velocity = jumpStrength; };
-window.addEventListener("keydown", (e) => { if(e.code === "Space") input(); });
-canvas.addEventListener("mousedown", input);
+// --- UNIVERSAL INPUT (MOBILE & DESKTOP) ---
+function handleInput(e) {
+    if (e) e.preventDefault(); // Prevents accidental zoom/scroll
+    if (gameState === "MENU") {
+        resetGame();
+    } else {
+        bird.velocity = jumpStrength;
+    }
+}
+
+// Mobile Tap
+canvas.addEventListener("touchstart", handleInput, { passive: false });
+// Mouse Click
+canvas.addEventListener("mousedown", handleInput);
+// Keyboard
+window.addEventListener("keydown", (e) => {
+    if (e.code === "Space") handleInput(e);
+});
 
 draw();
 </script>
