@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kalyan the Bird</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #70c5ce; font-family: 'Arial', sans-serif; touch-action: manipulation; }
+        body { margin: 0; overflow: hidden; background: #70c5ce; font-family: 'Arial', sans-serif; touch-action: none; }
         canvas { display: block; margin: 0 auto; background: #70c5ce; max-width: 100%; height: auto; }
         
         #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background: rgba(0, 0, 0, 0.8); color: white; text-align: center; z-index: 10;
+            background: rgba(0, 0, 0, 0.8); color: white; text-align: center; z-index: 99;
+            pointer-events: none; /* Let the tap pass through to the window */
         }
         
         h1 { font-size: 50px; margin: 0; color: #f1c40f; text-shadow: 4px 4px #000; animation: pulse 1.5s infinite; }
@@ -23,12 +24,12 @@
         .hidden { display: none !important; }
     </style>
 </head>
-<body>
+<body onclick="masterInput(event)">
 
 <div id="overlay">
     <h1>Kalyan the Bird</h1>
     <p>Game by Daksh</p>
-    <div class="hint">TAP SCREEN TO START</div>
+    <div class="hint">TAP ANYWHERE TO START</div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -38,37 +39,25 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const overlay = document.getElementById("overlay");
 
-// Balanced size for mobile and desktop
+// Standardized mobile size
 canvas.width = 500; 
 canvas.height = 800;
 
-// --- ASSETS ---
 const friendImg = new Image();
 friendImg.src = 'ma friend.png'; 
-
 const deathSound = new Audio('death.mp3');
 
-// --- SETTINGS ---
-let gravity = 0.15;       
+let gravity = 0.16;       
 let jumpStrength = -6;    
-let pipeGap = 320;        
+let pipeGap = 330;        
 let pipeSpeed = 3;
 let gameState = "MENU";
 let score = 0;
 let frameCount = 0;
 
-// MEGA SIZE BIRD
-const bird = { 
-    x: 80, 
-    y: 300, 
-    w: 220, 
-    h: 220, 
-    velocity: 0 
-};
-
+const bird = { x: 80, y: 300, w: 220, h: 220, velocity: 0 };
 let pipes = [];
 
-// Built-in Clouds (No file needed)
 function drawCloud(x, y) {
     ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
     ctx.beginPath();
@@ -90,10 +79,11 @@ function resetGame() {
     gameState = "PLAYING";
     overlay.classList.add("hidden");
     
-    // Unlock audio for mobile
-    deathSound.play();
-    deathSound.pause();
-    deathSound.currentTime = 0;
+    // Unlock and play audio immediately on first tap
+    deathSound.play().then(() => {
+        deathSound.pause();
+        deathSound.currentTime = 0;
+    }).catch(e => console.log("Audio waiting for user interaction"));
 }
 
 function die() {
@@ -116,7 +106,7 @@ function draw() {
         bird.velocity += gravity;
         bird.y += bird.velocity;
 
-        if (frameCount % 90 === 0) {
+        if (frameCount % 95 === 0) {
             let holePos = Math.random() * (canvas.height - pipeGap - 200) + 100;
             pipes.push({ x: canvas.width, top: holePos, passed: false });
         }
@@ -126,7 +116,6 @@ function draw() {
             ctx.fillStyle = "#2ecc71";
             ctx.strokeStyle = "#1b5e20";
             ctx.lineWidth = 6;
-            
             ctx.fillRect(p.x, 0, 80, p.top);
             ctx.strokeRect(p.x, 0, 80, p.top);
             ctx.fillRect(p.x, p.top + pipeGap, 80, canvas.height);
@@ -137,9 +126,8 @@ function draw() {
                 p.passed = true;
             }
 
-            // Tighter collision for giant photo
-            let mx = 60; // Side mercy
-            let my = 50; // Top/Bottom mercy
+            let mx = 65; 
+            let my = 55; 
             if (bird.x + mx < p.x + 80 && bird.x + bird.w - mx > p.x &&
                (bird.y + my < p.top || bird.y + bird.h - my > p.top + pipeGap)) {
                 die();
@@ -149,7 +137,6 @@ function draw() {
 
         if (bird.y + bird.h - 40 > canvas.height || bird.y + 40 < 0) die();
 
-        // Draw Bird
         if (friendImg.complete && friendImg.naturalWidth !== 0) {
             ctx.drawImage(friendImg, bird.x, bird.y, bird.w, bird.h);
         } else {
@@ -167,9 +154,8 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
-// --- UNIVERSAL INPUT (MOBILE & DESKTOP) ---
-function handleInput(e) {
-    if (e) e.preventDefault(); // Prevents accidental zoom/scroll
+// --- ULTIMATE INPUT FIX ---
+function masterInput(e) {
     if (gameState === "MENU") {
         resetGame();
     } else {
@@ -177,13 +163,9 @@ function handleInput(e) {
     }
 }
 
-// Mobile Tap
-canvas.addEventListener("touchstart", handleInput, { passive: false });
-// Mouse Click
-canvas.addEventListener("mousedown", handleInput);
-// Keyboard
+// Keyboard fallback for PC
 window.addEventListener("keydown", (e) => {
-    if (e.code === "Space") handleInput(e);
+    if (e.code === "Space") masterInput(e);
 });
 
 draw();
