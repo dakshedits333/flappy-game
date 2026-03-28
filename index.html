@@ -26,7 +26,7 @@
 
             background: rgba(0, 0, 0, 0.8); color: white; text-align: center; z-index: 99;
 
-            pointer-events: none; /* Let the tap pass through to the window */
+            pointer-events: none;
 
         }
 
@@ -52,8 +52,6 @@
 
 <body onclick="masterInput(event)">
 
-
-
 <div id="overlay">
 
     <h1>Kalyan the Bird</h1>
@@ -64,11 +62,7 @@
 
 </div>
 
-
-
 <canvas id="gameCanvas"></canvas>
-
-
 
 <script>
 
@@ -78,23 +72,15 @@ const ctx = canvas.getContext("2d");
 
 const overlay = document.getElementById("overlay");
 
-
-
-// Standardized mobile size
-
 canvas.width = 500; 
 
 canvas.height = 800;
-
-
 
 const friendImg = new Image();
 
 friendImg.src = 'ma friend.png'; 
 
 const deathSound = new Audio('death.mp3');
-
-
 
 let gravity = 0.16;       
 
@@ -110,13 +96,9 @@ let score = 0;
 
 let frameCount = 0;
 
-
-
 const bird = { x: 80, y: 300, w: 220, h: 220, velocity: 0 };
 
 let pipes = [];
-
-
 
 function drawCloud(x, y) {
 
@@ -136,11 +118,7 @@ function drawCloud(x, y) {
 
 }
 
-
-
 let cloudPos = [{x: 50, y: 100}, {x: 350, y: 180}, {x: 200, y: 550}];
-
-
 
 function resetGame() {
 
@@ -160,8 +138,6 @@ function resetGame() {
 
     
 
-    // Unlock and play audio immediately on first tap
-
     deathSound.play().then(() => {
 
         deathSound.pause();
@@ -172,27 +148,29 @@ function resetGame() {
 
 }
 
-
-
 function die() {
+
+    deathSound.currentTime = 0;
 
     deathSound.play();
 
-    gameState = "MENU";
+    gameState = "DEAD";
 
-    overlay.classList.remove("hidden");
+    deathSound.onended = () => {
+
+        gameState = "MENU";
+
+        overlay.classList.remove("hidden");
+
+    };
 
 }
-
-
 
 function draw() {
 
     ctx.fillStyle = "#70c5ce";
 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-
 
     cloudPos.forEach(c => {
 
@@ -204,15 +182,11 @@ function draw() {
 
     });
 
-
-
     if (gameState === "PLAYING") {
 
         bird.velocity += gravity;
 
         bird.y += bird.velocity;
-
-
 
         if (frameCount % 95 === 0) {
 
@@ -221,8 +195,6 @@ function draw() {
             pipes.push({ x: canvas.width, top: holePos, passed: false });
 
         }
-
-
 
         pipes.forEach((p, index) => {
 
@@ -242,8 +214,6 @@ function draw() {
 
             ctx.strokeRect(p.x, p.top + pipeGap, 80, canvas.height);
 
-
-
             if (!p.passed && bird.x + (bird.w/2) > p.x + 80) {
 
                 score++;
@@ -251,8 +221,6 @@ function draw() {
                 p.passed = true;
 
             }
-
-
 
             let mx = 65; 
 
@@ -270,11 +238,7 @@ function draw() {
 
         });
 
-
-
         if (bird.y + bird.h - 40 > canvas.height || bird.y + 40 < 0) die();
-
-
 
         if (friendImg.complete && friendImg.naturalWidth !== 0) {
 
@@ -288,8 +252,6 @@ function draw() {
 
         }
 
-
-
         ctx.fillStyle = "white";
 
         ctx.font = "bold 60px Arial";
@@ -298,8 +260,6 @@ function draw() {
 
         ctx.fillText(score, canvas.width/2, 80);
 
-
-
         frameCount++;
 
     }
@@ -307,10 +267,6 @@ function draw() {
     requestAnimationFrame(draw);
 
 }
-
-
-
-// --- ULTIMATE INPUT FIX ---
 
 function masterInput(e) {
 
@@ -326,17 +282,11 @@ function masterInput(e) {
 
 }
 
-
-
-// Keyboard fallback for PC
-
 window.addEventListener("keydown", (e) => {
 
     if (e.code === "Space") masterInput(e);
 
 });
-
-
 
 draw();
 
